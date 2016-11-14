@@ -1,6 +1,5 @@
 from tkinter import *
 import serial
-import threading
 
 temperature = 0
 light = 0
@@ -38,12 +37,12 @@ def handle_arduino_input(text):
 
 def readserial():
     ser = serial.Serial(port='COM4', baudrate=9600, timeout=1)
-    b = ser.readline()
-    print("Light : " + str(light))
-    print("Distance : " + str(distance))
-    print("Temp : " + str(temperature))
+
     while 1:
         b = ser.readline()
+        print("Light : " + str(light))
+        print("Distance : " + str(distance))
+        print("Temp : " + str(calculate_temp(temperature)))
         if b.strip():
             # Function to set variables
             handle_arduino_input(b.decode('utf-8'))
@@ -77,6 +76,5 @@ root.close_button = Button(root, text="Close", command=root.quit)
 root.close_button.pack()
 
 #Start GUI and Serial
-root.after(5, readserial)
-
 root.mainloop()
+readserial()
