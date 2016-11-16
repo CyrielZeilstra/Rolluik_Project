@@ -54,6 +54,7 @@ def readserial(listselection):
 
 Connected_Ports = []
 
+#Function to find connected arduino's by scanned USB ports.
 def Hook_To_Arduino():
     global Connected_Ports
     for a in OPTIONS:
