@@ -3,6 +3,7 @@
 #include <avr/interrupt.h>
 #include <avr/delay.h>
 #include <serial_OUT.h>
+#include <serial_IN.h>
 #include <distance.h>
 /*------------------------------------------------------------------*-
 
@@ -259,7 +260,7 @@ void led_test()
 	PORTB &= ~_BV(PORTB2); // Groen
 }
 
-void init_serial(){
+void init_serial_out(){
 	UBRR0H = (BRC >> 8);
 	UBRR0L =  BRC;
 	
@@ -267,6 +268,16 @@ void init_serial(){
 	UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
 	
 	sei();
+}
+
+void init_serial_in(){
+    UBRR0H = (BRC >> 8);
+    UBRR0L =  BRC;
+    
+    UCSR0B = (1 << RXEN0)  | (1 << RXCIE0);
+    UCSR0C = (1 << UCSZ01) | (1 << UCSZ00);
+    
+    sei();
 }
 
 void InitADC()
@@ -289,6 +300,7 @@ uint16_t ReadADC(uint8_t ADCchannel)
 }
 
 void read_temp_senor(){
+	init_serial_out();
 	int reading = ReadADC(0);
 	
 	char reader[50];
@@ -300,6 +312,7 @@ void read_temp_senor(){
 }
 
 void read_light_sensor(){
+	init_serial_out();
 	int reading = ReadADC(1);
 	
 	char reader[50];
@@ -310,15 +323,55 @@ void read_light_sensor(){
 	serialWrite("|\n");
 }
 
-void read_distance_sensor(){
+void blink_yellow(){
+	PORTB &= ~_BV(PORTB2); // Groen
+	PORTB &= ~_BV(PORTB0);// Rood
+	
+	PORTB |= _BV(PORTB1); // Geel Aan
+	_delay_ms(10000);
+	PORTB &= ~_BV(PORTB1); // Geel Uit
+	_delay_ms(10000);
+	PORTB |= _BV(PORTB1); // Geel Aan
+}
+
+void set_leds(){
 	int reading = calc_cm();
+//	max_rolluik_lenght
+//	min_rolluik_lenght
+	if (reading < 15){
+	// laat groen branden
+	PORTB &= ~_BV(PORTB0);// Rood
+	PORTB &= ~_BV(PORTB1); // Geel
+	PORTB |= _BV(PORTB2); // Groen
+	}
+	else if (reading > 25){	
+	// Rood laten branden
+	PORTB |= _BV(PORTB0);// Rood
+	PORTB &= ~_BV(PORTB1); // Geel
+	PORTB &= ~_BV(PORTB2); // Groen
+	}
+	else {
+	blink_yellow();
+	}
+}
+
+void read_python_input(){
+	init_serial_in();
+	char c = getChar();
+	
+	init_serial_out();
 
 	char reader[50];
-	sprintf(reader, "%i", reading);
-	
-	serialWrite("|D");
-	serialWrite(reader);
+	reader[0] = c;
+	serialWrite("|KK");
+    serialWrite(reader);
 	serialWrite("|\n");
+	
+	if (c == '6'){
+		PORTB |= _BV(PORTB0);// Rood
+		PORTB &= ~_BV(PORTB1); // Geel
+		PORTB &= ~_BV(PORTB2); // Groen
+	}
 }
 
 int main()
@@ -326,17 +379,22 @@ int main()
 	 // Initialize components
 	 SCH_Init_T1(); 
 	 init_led();
-	 init_serial();
 	 InitADC();	 
 	 init_sensor_ports();
 	 init_timer();
 	 init_ext_int();
 	 
-	 // Add tasks
-	 SCH_Add_Task(led_test,0,1000);
-	 SCH_Add_Task(read_temp_senor,200,750);
-	 SCH_Add_Task(read_light_sensor,100,500);
-	 SCH_Add_Task(read_distance_sensor,0,100);
+	 
+	// Add tasks
+	
+	// Task_ID = SCH_Add_Task(Do_X,300,1000);
+	// Causes the function Do_X() to be executed regularly, every 1000 ticks.
+	// Task will be first executed at T = 300 ticks, then 1300, 2300, etc.       
+	 
+	SCH_Add_Task(set_leds,100,500);
+	SCH_Add_Task(read_temp_senor,200,750);
+	SCH_Add_Task(read_light_sensor,100,500);
+//	SCH_Add_Task(read_python_input,5,100);
 	 
 	 // Start Scheduler
 	 SCH_Start();

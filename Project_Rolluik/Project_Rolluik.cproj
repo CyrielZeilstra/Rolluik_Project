@@ -108,6 +108,9 @@
     <Compile Include="distance.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="serial_IN.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="serial_OUT.h">
       <SubType>compile</SubType>
     </Compile>

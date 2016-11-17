@@ -19,7 +19,6 @@
 sTask SCH_tasks_G[SCH_MAX_TASKS];
 char serialBuffer[TX_BUFFER_SIZE];
 
-
 uint8_t serialReadPos = 0;
 uint8_t serialWritePos = 0;
 
